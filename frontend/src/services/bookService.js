@@ -4,6 +4,9 @@ const API_URL =
 
 async function request(path, options = {}) {
   const headers = { ...options.headers };
+  if (options.body) {
+    headers["Content-Type"] = "application/json";
+  }
   const token = localStorage.getItem("token");
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -24,6 +27,27 @@ export function getBooks(filters = {}) {
   if (filters.category && typeof filters.category === "string" && filters.category.trim()) {
     params.set("category", filters.category.trim());
   }
+  if (filters.available !== undefined && filters.available !== "") {
+    params.set("available", String(filters.available));
+  }
   const query = params.toString();
   return request(`/books${query ? `?${query}` : ""}`);
+}
+
+export function getBookById(id) {
+  return request(`/books/${id}`);
+}
+
+export function createBook(book) {
+  return request("/books", {
+    method: "POST",
+    body: JSON.stringify(book)
+  });
+}
+
+export function updateBook(id, book) {
+  return request(`/books/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(book)
+  });
 }

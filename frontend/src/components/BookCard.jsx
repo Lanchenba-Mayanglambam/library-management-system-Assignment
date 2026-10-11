@@ -1,4 +1,4 @@
-function BookCard({ book }) {
+function BookCard({ book, onEdit }) {
   return (
     <article className="book-card">
       <div className="book-card-heading">
@@ -11,6 +11,7 @@ function BookCard({ book }) {
         <div><dt>Published</dt><dd>{book.publicationYear}</dd></div>
         <div><dt>Copies</dt><dd>{book.availableCopies} / {book.totalCopies}</dd></div>
       </dl>
+      {onEdit && <button className="secondary-button" onClick={() => onEdit(book)}>Edit book</button>}
     </article>
   );
 }

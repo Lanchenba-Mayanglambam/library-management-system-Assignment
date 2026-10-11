@@ -45,6 +45,16 @@ body {
 .book-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0 0; }
 .book-details dt { color: #6b7280; font-size: 12px; } .book-details dd { margin: 3px 0 0; overflow-wrap: anywhere; }
 .secondary-button { background: #e5e7eb; color: #1f2937; margin-top: 0; }
+.filters { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid #e5e7eb; }
+.filters label, .book-form label { display: flex; flex-direction: column; gap: 6px; font-weight: bold; font-size: 14px; flex: 1; min-width: 150px; }
+.filters input, .filters select, .book-form input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px; font: inherit; font-weight: normal; }
+.search-field { flex: 2 !important; }
+.book-card .secondary-button { margin-top: 18px; }
+.book-form { padding: 20px 0; border-bottom: 1px solid #e5e7eb; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 18px 0; }
+.form-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; } .form-heading h2 { margin-top: 0; }
+.text-button { background: #e5e7eb; color: #1f2937; border: 0; padding: 5px 8px; font-size: 14px; margin-top: 0; }
+.success-message { color: #166534; background: #dcfce7; padding: 10px; border-radius: 5px; }
 
 .auth-card h1,
 .page-card h1 {
