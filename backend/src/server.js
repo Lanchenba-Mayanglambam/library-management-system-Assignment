@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
+import issueRoutes from "./routes/issueRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/issues", issueRoutes);
 
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });
