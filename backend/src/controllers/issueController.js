@@ -5,8 +5,10 @@ import User from "../models/User.js";
 
 export async function issueBook(req, res) {
   try {
-    const bookId = req.body.bookId || req.body.book;
-    const studentId = req.body.studentId || req.body.student;
+    const rawBookId = req.body.bookId || req.body.book;
+    const rawStudentId = req.body.studentId || req.body.student;
+    const bookId = typeof rawBookId === "string" ? rawBookId.trim() : rawBookId;
+    const studentId = typeof rawStudentId === "string" ? rawStudentId.trim() : rawStudentId;
     const { dueDate } = req.body;
 
     if (!bookId || !studentId) {
@@ -17,18 +19,9 @@ export async function issueBook(req, res) {
       return res.status(400).json({ message: "Invalid book or student ID" });
     }
 
-    const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(404).json({ message: "Book not found" });
-    }
-
     const student = await User.findById(studentId);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
-    }
-
-    if (book.availableCopies <= 0) {
-      return res.status(400).json({ message: "No copies available for this book" });
     }
 
     const activeIssue = await Issue.findOne({
@@ -41,20 +34,44 @@ export async function issueBook(req, res) {
       return res.status(400).json({ message: "Student already has an active issue for this book" });
     }
 
-    const returnDue = dueDate
-      ? new Date(dueDate)
-      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    let returnDue;
+    if (dueDate) {
+      returnDue = new Date(dueDate);
+      if (isNaN(returnDue.getTime())) {
+        return res.status(400).json({ message: "Invalid due date" });
+      }
+    } else {
+      returnDue = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    }
 
-    const issue = new Issue({
-      book: bookId,
-      student: studentId,
-      dueDate: returnDue
-    });
+    // Atomically decrement availableCopies if copies are available
+    const book = await Book.findOneAndUpdate(
+      { _id: bookId, availableCopies: { $gt: 0 } },
+      { $inc: { availableCopies: -1 } },
+      { new: true }
+    );
 
-    await issue.save();
+    if (!book) {
+      const exists = await Book.findById(bookId);
+      if (!exists) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+      return res.status(400).json({ message: "No copies available for this book" });
+    }
 
-    book.availableCopies -= 1;
-    await book.save();
+    let issue;
+    try {
+      issue = new Issue({
+        book: bookId,
+        student: studentId,
+        dueDate: returnDue
+      });
+      await issue.save();
+    } catch (saveError) {
+      // Rollback copy decrement if issue creation failed
+      await Book.findByIdAndUpdate(bookId, { $inc: { availableCopies: 1 } });
+      throw saveError;
+    }
 
     await issue.populate("book", "title author isbn category");
     await issue.populate("student", "name email");
@@ -77,23 +94,27 @@ export async function returnBook(req, res) {
       return res.status(400).json({ message: "Invalid issue ID" });
     }
 
-    const issue = await Issue.findById(id);
-    if (!issue) {
-      return res.status(404).json({ message: "Issue record not found" });
-    }
+    // Atomically update status to RETURNED only if currently ISSUED
+    const issue = await Issue.findOneAndUpdate(
+      { _id: id, status: "ISSUED" },
+      { status: "RETURNED", returnDate: new Date() },
+      { new: true }
+    );
 
-    if (issue.status === "RETURNED") {
+    if (!issue) {
+      const existingIssue = await Issue.findById(id);
+      if (!existingIssue) {
+        return res.status(404).json({ message: "Issue record not found" });
+      }
       return res.status(400).json({ message: "Book has already been returned" });
     }
 
-    issue.status = "RETURNED";
-    issue.returnDate = new Date();
-    await issue.save();
-
     const book = await Book.findById(issue.book);
     if (book) {
-      book.availableCopies += 1;
-      await book.save();
+      if (book.availableCopies < book.totalCopies) {
+        book.availableCopies += 1;
+        await book.save();
+      }
     }
 
     await issue.populate("book", "title author isbn category");
@@ -111,7 +132,12 @@ export async function returnBook(req, res) {
 
 export async function getMyBorrowedBooks(req, res) {
   try {
-    const issues = await Issue.find({ student: req.user._id })
+    const filter = { student: req.user._id };
+    if (req.query.status) {
+      filter.status = req.query.status.toUpperCase();
+    }
+
+    const issues = await Issue.find(filter)
       .populate("book", "title author isbn category")
       .sort({ createdAt: -1 });
 

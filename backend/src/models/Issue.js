@@ -33,4 +33,7 @@ const issueSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+issueSchema.index({ book: 1, student: 1, status: 1 });
+issueSchema.index({ student: 1 });
+
 export default mongoose.model("Issue", issueSchema);

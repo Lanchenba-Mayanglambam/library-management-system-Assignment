@@ -24,6 +24,8 @@ function IssueManagement() {
   const [formMessage, setFormMessage] = useState("");
   const [formError, setFormError] = useState("");
   const [returningId, setReturningId] = useState(null);
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
   async function fetchData() {
     setError("");
@@ -50,6 +52,8 @@ function IssueManagement() {
     e.preventDefault();
     setFormError("");
     setFormMessage("");
+    setActionError("");
+    setActionSuccess("");
 
     if (!selectedBook) {
       setFormError("Please select a book to issue");
@@ -81,11 +85,14 @@ function IssueManagement() {
 
   async function handleReturnBook(issueId) {
     setReturningId(issueId);
+    setActionError("");
+    setActionSuccess("");
     try {
-      await returnBook(issueId);
+      const res = await returnBook(issueId);
+      setActionSuccess(res.message || "Book returned successfully");
       fetchData();
     } catch (err) {
-      alert(err.message || "Failed to process return");
+      setActionError(err.message || "Failed to process return");
     } finally {
       setReturningId(null);
     }
@@ -169,6 +176,9 @@ function IssueManagement() {
             </select>
           </div>
         </div>
+
+        {actionSuccess && <div className="success-banner">{actionSuccess}</div>}
+        {actionError && <div className="error-banner">{actionError}</div>}
 
         {loading && <p className="status-text">Loading borrowing records...</p>}
         {error && (

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getMyBorrowedBooks } from "../services/issueService";
+import BookCatalogue from "../components/BookCatalogue";
 
 function Home() {
   const { user, logout } = useAuth();
@@ -28,10 +29,15 @@ function Home() {
     <div className="home-page">
       <div className="page-card home-card">
         <h1>Library Management System</h1>
-        <p>Welcome, <strong>{user?.name}</strong>!</p>
-        <p>
-          Role: <span className="role-tag">{user?.role === "admin" ? "Admin / Librarian" : "Student"}</span>
-        </p>
+        <div className="page-toolbar">
+          <p>
+            Welcome, {user?.name}!{" "}
+            <span className="role-badge">
+              {user?.role === "admin" ? "Admin/Librarian" : "Student"}
+            </span>
+          </p>
+          <button className="secondary-button" onClick={handleLogout}>Logout</button>
+        </div>
 
         {user?.role === "admin" && (
           <div className="admin-actions">
@@ -39,7 +45,7 @@ function Home() {
               Manage Book Issues & Returns
             </Link>
             <Link to="/admin" className="sub-link">
-              Admin Page
+              Manage Books
             </Link>
           </div>
         )}
@@ -70,7 +76,7 @@ function Home() {
           </div>
         )}
 
-        <button onClick={handleLogout} className="logout-btn">Logout</button>
+        <BookCatalogue />
       </div>
     </div>
   );

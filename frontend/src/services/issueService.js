@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
+  "http://localhost:5000/api";
 
 async function request(path, options = {}) {
   const headers = { ...options.headers };
@@ -18,7 +20,7 @@ async function request(path, options = {}) {
 }
 
 export function getAllIssues(status) {
-  const query = status ? `?status=${status}` : "";
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return request(`/issues/all${query}`);
 }
 
@@ -34,7 +36,7 @@ export function issueBook(payload) {
 }
 
 export function returnBook(issueId) {
-  return request(`/issues/return/${issueId}`, {
+  return request(`/issues/return/${encodeURIComponent(issueId)}`, {
     method: "POST"
   });
 }
